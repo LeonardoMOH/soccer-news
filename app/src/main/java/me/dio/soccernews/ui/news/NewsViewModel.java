@@ -7,26 +7,50 @@ import androidx.lifecycle.ViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.dio.soccernews.data.remote.soccernewsAPI;
 import me.dio.soccernews.domain.News;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class NewsViewModel extends ViewModel {
 
-    private final MutableLiveData<List<News>> news;
+    private final MutableLiveData<List<News>> news = new MutableLiveData<>();
+    private final soccernewsAPI api;
 
     public NewsViewModel() {
-        this.news = new MutableLiveData<>();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://leonardomoh.github.io/soccer-news-api/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
 
-        //TODO REMOVER MOCK DE NOTÍCIAS
-        List<News> news = new ArrayList<>();
-        news.add(new News("What is Lorem Ipsum?", "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."));
-        news.add(new News("What is Lorem Ipsum?", "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."));
-        news.add(new News("What is Lorem Ipsum?", "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."));
+        api = retrofit.create(soccernewsAPI.class);
+        this.findNews();
+    }
 
-        this.news.setValue(news);
+    private void findNews() {
+        api.getNews().enqueue(new Callback<List<News>>() {
+            @Override
+            public void onResponse(Call<List<News>> call, Response<List<News>> response) {
+                if (response.isSuccessful()){
+                    news.setValue(response.body());
+                } else{
+                    // TODO Pensar em uma estratégia de erros.
+                }
 
+            }
+
+            @Override
+            public void onFailure(Call<List<News>> call, Throwable t) {
+                // TODO Pensar em uma estratégia de erros.
+
+            }
+        });
     }
 
     public LiveData<List<News>> getNews() {
-        return news;
+        return this.news;
     }
 }
